@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title> Audio Player Final</title>
+  <style>
+:root {
+  --accent-color: #00ffe7;
+  --bg-start: #000510;
+  --bg-end: #001b2d;
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 255, 255, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+  color: var(--accent-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.now-playing-area {
+	  position: absolute;
+  margin-top: 16px;
+  margin-bottom: 20px;
+  font-weight: 600;
+  font-size: 15px;
+  text-align: center;
+  color: cyan;
+  background: rgba(0,255,255,0.07);
+  padding: 8px 14px;
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+}
+
+h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2em;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #0ff;
+  text-align: center;
+  margin: 12px 0 8px;
+  text-shadow: 0 0 5px #0ff, 0 0 10px #00faff, 0 0 20px #00e1ff, 0 0 30px #00bfff;
+}
+
+button {
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 6px 16px;
+  backdrop-filter: blur(6px);
+  transition: 0.3s ease;
+  box-shadow: 0 0 10px rgba(0,255,255,0.1);
+}
+
+button:hover {
+  box-shadow: 0 0 12px rgba(0,255,255,0.5), 0 0 4px rgba(0,255,255,0.3);
+}
+
+.player-container {
+  z-index: 1;
+  width: 95vw;
+  max-width: 880px;
+  padding: 20px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: 0 8px 28px var(--glass-shadow);
+  backdrop-filter: blur(14px) brightness(1.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+  /* EQ Sliders */
+  #manual-eq-sliders {
+    display: flex;
+    justify-content: center;
+    align-items: end;
+    flex-wrap: nowrap;
+    gap: 4vw;
+    width: 100%;
+    max-width: 95vw;
+    margin-top: 6px;
+    padding: 0 2vw;
+  }
+
+  .eq-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 7.5vw;
+    max-width: 28px;
+  }
+  
+  .eq-slider {
+    writing-mode: bt-lr;
+    -webkit-appearance: slider-vertical;
+    width: 14px;
+    height: 100px;
+    background: transparent;
+    accent-color: #0ff;
+      color: #0ff;
+      text-shadow: 0 0 4px #0ff;
+  }
+    .eq-col span {
+  flex-direction: column;
+  align-items: center;
+  width: 6.5vw;
+  max-width: 32px;
+      font-size: 0.6em;
+    margin-top: 2px;
+    color: #0ff;
+}
+      .eq-slider-box {
+    width: 28px;
+  }
+
+audio#audioPlayer {
+  width: 100%;
+  max-width: 600px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  box-shadow: 0px 
+  margin: 15px 0;
+}
+
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
+}
+
+  .row select, .row button, .row input[type=range] {
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: none;
+  color: #0ff;
+  font-size: 0.9em;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+input[type="range"],
+select {
+  accent-color: var(--accent-color);
+}
+
+.glassy-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--accent-color);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* Folder picker */
+#folderPicker {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  opacity: 0;
+  width: 36px;
+  height: 36px;
+  z-index: 10;
+}
+
+label[for="folderPicker"] {
+  position: absolute;
+  top: 110px;
+  left: 30px;
+  width: 36px;
+  height: 36px;
+  background: rgba(0,255,255,0.1);
+  border-radius: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 18px;
+  backdrop-filter: blur(8px);
+  color: #0ff;
+   z-index: 5; 
+}
+
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.status {
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.status.on {
+  color: #6f6;
+  text-shadow: 0 0 5px #6f6;
+}
+.status.off {
+  color: #f66;
+  text-shadow: 0 0 5px #f66;
+}
+
+button.on {
+  background: #0f0;
+  color: #000;
+}
+
+@media (max-width: 600px) {
+  .player-container {
+    padding: 12px;
+    border-radius: 16px;
+    max-height: 95vh;
+  }
+
+#digitalClock {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  color: #ff3c3c; /* ðŸ”´ Merah utama */
+  padding: 4px 12px;
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+  z-index: 999;
+  text-align: center;
+  animation: pulseText 1.4s ease-in-out infinite;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow:
+    0 0 4px #ff3c3c,
+    0 0 12px rgba(0,255,255,0.4),
+    0 0 24px rgba(0,255,255,0.6);
+}
+
+@keyframes pulseText {
+  0% {
+    opacity: 0.6;
+    text-shadow:
+      0 0 4px #ff3c3c,
+      0 0 12px rgba(0,255,255,0.4);
+  }
+  100% {
+  	    color: #ff5f5f;
+    opacity: 2;
+    text-shadow:
+      0 0 6px #ff5c5c,
+      0 0 16px rgba(0,255,255,0.7),
+      0 0 28px rgba(0,255,255,1);
+  }
+}
+
+  button.boost-btn {
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.05);
+  color: #0ff;
+  transition: 0.3s ease;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-weight: bold;
+  text-shadow: 0 0 4px #0ff;
+}
+
+button.boost-btn.on {
+  background: linear-gradient(to right, #0f0, #6f6);
+  color: #000;
+  text-shadow: none;
+  box-shadow: 0 0 12px #6f6;
+}
+
+.boost-btn.active {
+  background: #00ffcc;
+  color: black;
+  font-weight: bold;
+  border: 2px solid white;
+}
+
+  .glassy-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  audio#audioPlayer {
+    height: 40px;
+  }
+}
+  
+  </style>
+</head>
+
+<body>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+	<!--  Player UI -->
+  <div class="player-container">
+
+<!--  Cuma satu elemen jam -->
+<div id="digitalClock" style="  
+  position: absolute;  
+  top: 10px;  
+  left: 50%;  
+  transform: translateX(-50%);  
+  font-family: 'Inter', sans-serif;  
+  font-size: 13px;  
+  font-weight: 600;  
+  color: #fff;  
+  background: rgba(255,255,255,0.05);  
+  border: 1px solid rgba(255,255,255,0.1);  
+  padding: 4px 12px;  
+  border-radius: 10px;  
+  backdrop-filter: blur(6px);  
+  box-shadow: 0 0 6px rgba(255,255,255,0.2);  
+  z-index: 999;  
+  text-align: center;  
+">  
+  Loading Clock...  
+</div>
+
+
+  	          <div class="audio-box">
+  	  <h2>MUSIC PLAYER</h2>
+<!-- Preset Selector -->
+<div class="row" style="flex-wrap:wrap; gap:8px">
+  <label for="preset-select"> Equalizer:</label>
+    <section id="presetBasicSelect" style="max-width: 300px; margin: 12px auto; padding: 6px; text-align: center; background: transparent;">
+      <select id="presetBasicSelect"
+        style="padding: 6px 20px; font-size: 12px; border-radius: 6px; min-width: 160px;
+          background: rgba(255,255,255,0.08); backdrop-filter: blur(6px);
+          border: 1px solid rgba(255,255,255,0.1); color: #fff; cursor: pointer; transition: all 0.2s ease;">
+        <option value="Flat" selected>Flat </option>
+        <option value="Bass Boost"> Bass</option>
+        <option value="Treble Boost">Treble</option>
+        <option value="Rock">Rock</option>
+        <option value="Pop"> Pop</option>
+        <option value="Jazz">Jazz</option>
+        <option value="Dance">Dance</option>
+        <option value="Classic">Classic</option>
+    </select>
+    <section id="preset-advance" style="max-width: 300px; margin: 12px auto; padding: 6px; text-align: center; background: transparent;">
+      <select id="preset-advance" 
+        style="padding: 6px 20px; font-size: 12px; border-radius: 6px; min-width: 160px;
+          background: rgba(255,255,255,0.08); backdrop-filter: blur(6px);
+          border: 1px solid rgba(255,255,255,0.1); color: #fff; cursor: pointer; transition: all 0.2s ease;">
+        <option value="Flat" selected>Advance OFF</option>
+        <option value="Sub Bass Lift"> Sub Bass Lift</option>
+        <option value="Vocal Presence"> Vocal Presence</option>
+        <option value="Warm & Wide">Warm & Wide</option>
+        <option value="Treble Sparkle">Treble Sparkle</option>
+        <option value="Hi-Fi Wide Range"> Hi-Fi Wide</option>
+    </select>
+  </section>
+</div>
+</div>
+
+    <div id="playerBox">  
+        <!-- File Picker -->
+<!-- Folder Picker Icon -->
+<input type="file" id="folderPicker" webkitdirectory multiple accept="audio/*" />
+<label for="folderPicker"></label>
+</label>
+
+    <!-- Volume Control -->
+    <div class="row">
+<input type="range" id="volumeRange" min="0" max="2.5" value="1" step="0.01" />
+<span id="gain-info"> 1.00x</span>
+    </div>
+<!-- Manual EQ Sliders -->
+<div id="manual-eq-sliders" style="display:grid; grid-template-columns: repeat(12, 1fr); gap: 1px; margin-top:12px;">
+  <div class="eq-col"><input id="eqSlider0"  class="eq-slider" type="range" min="-12" max="12" value="0" /><span>32Hz</span></div>
+  <div class="eq-col"><input id="eqSlider1"  class="eq-slider" type="range" min="-12" max="12" value="0" /><span>64Hz</span></div>
+  <div class="eq-col"><input id="eqSlider2"  class="eq-slider" type="range" min="-12" max="12" value="0" /><span>125Hz</span></div>
+  <div class="eq-col"><input id="eqSlider3"  class="eq-slider" type="range" min="-12" max="12" value="0" /><span>250Hz</span></div>
+  <div class="eq-col"><input id="eqSlider4"  class="eq-slider" type="range" min="-12" max="12" value="0" /><span>500Hz</span></div>
+  <div class="eq-col"><input id="eqSlider5"  class="eq-slider" type="range" min="-12" max="12" value="0" /><span>1kHz</span></div>
+  <div class="eq-col"><input id="eqSlider6"  class="eq-slider" type="range" min="-12" max="12" value="0" /><span>2kHz</span></div>
+  <div class="eq-col"><input id="eqSlider7"  class="eq-slider" type="range" min="-12" max="12" value="0" /><span>4kHz</span></div>
+  <div class="eq-col"><input id="eqSlider8"  class="eq-slider" type="range" min="-12" max="12" value="0" /><span>8kHz</span></div>
+  <div class="eq-col"><input id="eqSlider9"  class="eq-slider" type="range" min="-12" max="12" value="0" /><span>12kHz</span></div>
+  <div class="eq-col"><input id="eqSlider10" class="eq-slider" type="range" min="-12" max="12" value="0" /><span>16kHz</span></div>
+  <div class="eq-col"><input id="eqSlider11" class="eq-slider" type="range" min="-12" max="12" value="0" /><span>20kHz</span></div>
+</div>
+</section>
+               
+              <div id="nowPlaying">Now Playing: <span id="trackName">-</span>
+
+              	    <!-- Audio Mode Section -->
+<audio id="audioPlayer" controls src="lagu.mp3" autoplay></audio>
+        <div class="row">
+    <section id="preset-section" style="max-width: 300px; margin: 12px auto; padding: 6px; text-align: center; background: transparent;">
+      <select id="presetSelect"
+        style="padding: 6px 20px; font-size: 12px; border-radius: 6px; min-width: 160px;
+          background: rgba(255,255,255,0.08); backdrop-filter: blur(6px);
+          border: 1px solid rgba(255,255,255,0.1); color: #fff; cursor: pointer; transition: all 0.2s ease;">
+    <option value="Booster Mode">Booster Mode</option>
+    <option value="Normal">Normal</option>
+    <option value="Soft">Soft</option>
+    <option value="Hard">Hard</option>
+    <option value="Extreme">Extreme</option>
+  </select>
+</section>
+    </div>
+<div class="row" id="boosterFreqGroup">
+  <button id="boostLow">LOW</button>
+  <button id="boostMid">MID</button>
+  <button id="boostHigh">HIGH</button>
+</div>
+    </div>
+    
+    </div>
+     <!-- BlendToggleBtn -->
+    <div class="row" style="flex-wrap:wrap; gap:2px">
+    	      	      <div id="blendToggleBtn"
+        style="padding: 6px 20px; font-size: 12px; border-radius: 20px; min-width: 160px;
+          background: rgba(255,255,255,0.08); backdrop-filter: blur(6px);
+          border: 1px solid rgba(255,255,255,0.1); color: #fff; cursor: pointer; transition: all 0.2s ease;">
+      <button id="blendToggleBtn">Blend</button>
+                <span id="blendStatus" class="status off">OFF</span>
+          </div>
+      <input type="range" id="blendRatio" min="0" max="1" step="0.05" value="0.5" />
+      <span id="blendValue">0.50x</span>
+    </div>
+    <div class="row" style="flex-wrap:wrap; gap:2px">
+      <select id="presetA">
+        <option value="Flat" >Flat </option>
+        <option value="Bass Boost"> Bass</option>
+        <option value="Treble Boost">Treble</option>
+        <option value="Rock">Rock</option>
+        <option value="Pop"> Pop</option>
+        <option value="Jazz">Jazz</option>
+        <option value="Dance">Dance</option>
+        <option value="Classic">Classic</option>
+    </select>
+      <select id="presetB">
+        <option value="Sub Bass Lift">Sub Bass Lift</option>
+        <option value="Vocal Presence">Vocal Presence</option>
+        <option value="Warm & Wide">Warm & Wide</option>
+        <option value="Treble Sparkle">Treble Sparkle</option>
+        <option value="Hi-Fi Wide Range">Hi-Fi Wide Range</option>
+      </select>
+          </div>
+      
+       <!-- StereoToggleBtn -->
+      <div class="row">
+      	      <div id="StereoToggleBtn"
+        style="padding: 6px 20px; font-size: 12px; border-radius: 20px; min-width: 160px;
+          background: rgba(255,255,255,0.08); backdrop-filter: blur(6px);
+          border: 1px solid rgba(255,255,255,0.1); color: #fff; cursor: pointer; transition: all 0.2s ease;">
+      <button id="StereoToggleBtn">Dynamic Stereo</button>
+      <span id="StereoStatus" class="status off">OFF</span>
+    </div>
+
+<!-- Tombol Reset: Nuclear Style -->
+<button id="resetBtn" title="Reset Semua" style="
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ffffff;
+  text-shadow: 0 0 6px #ffffff, 0 0 12px #bbbbbb, 0 0 24px #ffffff;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 99;
+  transition: transform 0.2s ease;
+" onclick="location.reload()">
+  
+</button>
+
+    <button id="testEngineBtn" class="glassy-btn"> Tes Mesin Audio</button>
+<pre id="testLog" style="
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #0ff;
+  padding: 12px;
+  margin-top: 12px;
+  font-size: 12px;
+  border-radius: 10px;
+  white-space: pre-wrap;
+  max-height: 160px;
+  overflow-y: auto;
+  backdrop-filter: blur(4px);
+">Log mesin belum dijalankan...</pre>
+
+<canvas id="waveformCanvas" style="width: 100%; height: 100px;"></canvas>
+</div>
+<script>  
+window.addEventListener("error", e => console.error(" Global Error:", e.message));
+
+//  AudioContext & Graph Setup
+const frequencies = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 12000, 16000, 20000];
+
+let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let player, sourceNode, gainNode, subwoofer;
+let enhancer = audioCtx.createBiquadFilter();
+let compressor = audioCtx.createDynamicsCompressor();
+let clarity, agcGainNode, agcLimiter;
+let loudnessLow, loudnessHigh;
+let audioGraphInitialized = false;
+let stereoPanner;
+let lastAudioNode; // akan disambungkan ke stereo toggle
+let stereoToggleState = false; // default OFF
+let currentFilename = "-";
+
+let lastAppliedPreset = "Flat";
+let lastBlendState = null;
+
+let lastManualPreset = "Flat";
+let blendActive = false;
+let boosterActive = false;
+let stereoActive = false;
+
+let lastEQ = []; // ← sangat penting!
+let lastEnhancer = 1;
+let lastCompressor = -24;
+
+let boosterBand = null; // "LOW", "MID", "HIGH", or null
+let boosterAmount = 2;  // default booster gain
+
+//  EQ Filters
+let eqFilters = frequencies.map(freq => {
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = "peaking";
+  filter.frequency.value = freq;
+  filter.Q.value = 1.0;
+  filter.gain.value = 0;
+  return filter;
+});
+
+// 1. Pisahkan basic dan advance
+const basicPresets = {
+  "Flat":        { eq: [0,0,0,0,0,0,0,0,0,0,0,0], enhancer: 0, compressor: -24 },
+  "Bass Boost":  { eq: [6,6,5,4,2,0,-2,-4,-5,-6,-6,-6], enhancer: 1, compressor: -18 },
+  "Treble Boost":{ eq: [-6,-6,-5,-3,-1,0,2,4,6,6,6,6], enhancer: 6, compressor: -16 },
+  "Rock":        { eq: [5,4,3,2,0,-2,1,3,4,5,4,3], enhancer: 3, compressor: -20 },
+  "Pop":         { eq: [3,2,1,1,2,3,3,4,3,2,1,0], enhancer: 3, compressor: -17 },
+  "Jazz":        { eq: [2,2,1,1,1,2,3,2,2,1,1,0], enhancer: 3, compressor: -21 },
+  "Classic":     { eq: [1,1,0,0,1,2,3,3,2,1,0,-1], enhancer: 2, compressor: -23 },
+  "Dance":       { eq: [5,5,4,3,2,1,2,4,5,5,5,4], enhancer: 5, compressor: -14 }
+};
+
+const advancePresets = {
+  "Sub Bass Lift":     { eq: [6,6,6,5,3,1,-2,-4,-5,-6,-6,-6], enhancer: 1, compressor: -12 },
+  "Vocal Presence":    { eq: [0,0,0,1,2,3,4,6,5,3,1,0], enhancer: 4, compressor: -15 },
+  "Treble Sparkle":    { eq: [-3,-3,-2,-1,0,2,3,5,6,6,6,6], enhancer: 6, compressor: -10 },
+  "Hi-Fi Wide Range":  { eq: [2,2,2,1,1,1,2,3,3,2,2,1], enhancer: 5, compressor: -19 },
+  "Warm & Wide":       { eq: [2,2,2,1,1,1,2,2,3,3,2,1], enhancer: 3, compressor: -20 }
+};
+
+// 2. Gabungkan keduanya ke allPresets
+const allPresets = {
+  ...basicPresets,
+  ...advancePresets
+};
+  
+function applyPreset(name) {
+  console.log("🎚️ Apply preset:", name);
+  const preset = allPresets[name];
+
+  if (!preset || !eqFilters || eqFilters.length === 0) {
+    console.warn("⚠️ EQ filters belum siap atau preset tidak ditemukan");
+    return;
+  }
+
+  lastAppliedPreset = name;
+  lastBlendState = null;
+
+  preset.eq.forEach((gain, i) => {
+    let boostedGain = gain;
+    try {
+      if (typeof applyBoosterToBand === "function") {
+        boostedGain = applyBoosterToBand(i, gain);
+      }
+    } catch (e) {
+      console.warn("⚠️ Booster gagal diterapkan:", e.message);
+    }
+
+    const filter = eqFilters[i];
+    const slider = document.querySelectorAll('.eq-slider')[i];
+
+    if (filter) filter.gain.setTargetAtTime(boostedGain, audioCtx.currentTime, 0.02);
+    if (slider) slider.value = boostedGain;
+  });
+
+
+  // Optional: apply enhancer & compressor
+  if (enhancer) enhancer.gain.setTargetAtTime(preset.enhancer ?? 1.0, audioCtx.currentTime, 0.02);
+  if (compressor) {
+    compressor.threshold.setTargetAtTime(preset.compressor ?? -24, audioCtx.currentTime, 0.02);
+    compressor.ratio.setTargetAtTime(6, audioCtx.currentTime, 0.02);
+  }
+
+
+  //  Apply nilai EQ ke filter dan update slider
+function applyPreset(name) {
+  console.log("🎚️ Apply preset:", name);
+  const preset = allPresets[name];
+
+  if (!preset || !eqFilters || eqFilters.length === 0) {
+    console.warn("⚠️ EQ filters belum siap. Pastikan audio sudah diputar.");
+    return;
+  }
+
+  // Apply nilai EQ ke filter dan update slider
+  preset.eq.forEach((gain, i) => {
+    const boostedGain = applyBoosterToBand(i, gain); // booster logic
+    const filter = eqFilters[i];
+    const slider = document.querySelectorAll('.eq-slider')[i];
+
+    if (filter) filter.gain.setTargetAtTime(boostedGain, audioCtx.currentTime, 0.02);
+    if (slider) slider.value = boostedGain;
+  });
+}
+
+// ✅ Booster logic di luar applyPreset
+function applyBoosterToBand(index, baseGain) {
+  if (!boosterBand) return baseGain;
+
+  const bandIndices = {
+    LOW: [0, 1, 2, 3],
+    MID: [4, 5, 6, 7],
+    HIGH: [8, 9, 10, 11]
+  };
+
+  const targets = bandIndices[boosterBand] || [];
+  return targets.includes(index) ? baseGain + boosterAmount : baseGain;
+}
+
+  //  Apply enhancer & compressor
+  if (enhancer) enhancer.gain.setTargetAtTime(preset.enhancer, audioCtx.currentTime, 0.02);
+
+  if (compressor) {
+    compressor.threshold.setTargetAtTime(preset.compressor, audioCtx.currentTime, 0.02);
+    compressor.ratio.setTargetAtTime(6, audioCtx.currentTime, 0.02);
+  }
+}
+
+function setupAudioGraph(player, presetName = "beningStable") {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  const p = {
+    clarityFreq: 3600, clarityQ: 0.95, clarityGain: 2.8,
+    enhancerFreq: 6500, enhancerGain: 2.5,
+    ambientFreq: 11000, ambientQ: 0.7,
+    subGain: 6.2,
+    agcThresh: -9, agcRatio: 8,
+    compThresh: -18, compRatio: 3.2,
+    gainOut: 0.82
+  };
+
+  eqFilters = frequencies.map(freq => {
+    const f = audioCtx.createBiquadFilter();
+    f.type = "peaking";
+    f.frequency.value = freq;
+    f.Q.value = 1;
+    f.gain.value = 0;
+    return f;
+  });
+
+  clarity = audioCtx.createBiquadFilter();
+  clarity.type = "bandpass";
+clarity.frequency.value = 3100;
+clarity.Q.value = 1;
+clarity.gain.value = 0.6; 
+
+  const clarityGain = audioCtx.createGain();
+clarityGain.gain.value = 0.65
+
+  enhancer = audioCtx.createBiquadFilter();
+  enhancer.type = "highshelf";
+  enhancer.frequency.value = p.enhancerFreq;
+enhancer.gain.value = 2;
+
+  loudnessLow = audioCtx.createBiquadFilter();
+  loudnessLow.type = "lowshelf";
+  loudnessLow.frequency.value = 150;
+loudnessLow.gain.value = 2;
+
+  loudnessHigh = audioCtx.createBiquadFilter();
+  loudnessHigh.type = "highshelf";
+  loudnessHigh.frequency.value = 6000;
+loudnessHigh.gain.value = 3.5; 
+
+  subwoofer = audioCtx.createBiquadFilter();
+  subwoofer.type = "lowshelf";
+  subwoofer.frequency.value = 80;
+subwoofer.gain.value = 7;
+
+const deEsser = audioCtx.createBiquadFilter();
+deEsser.type = "peaking";
+deEsser.frequency.value = 7900;
+deEsser.Q.value = 3;
+deEsser.gain.value = -6;
+
+  ambient = audioCtx.createBiquadFilter();
+  ambient.type = "lowpass";
+  ambient.frequency.value = p.ambientFreq;
+  ambient.Q.value = p.ambientQ;
+
+  toneBias = audioCtx.createBiquadFilter();
+  toneBias.type = "peaking";
+  toneBias.frequency.value = 1200;
+  toneBias.Q.value = 1;
+  toneBias.gain.value = 1.6;
+
+  compressor = audioCtx.createDynamicsCompressor();
+  compressor.threshold.value = p.compThresh;
+  compressor.ratio.value = p.compRatio;
+
+  agcLimiter = audioCtx.createDynamicsCompressor();
+  agcLimiter.threshold.value = p.agcThresh;
+  agcLimiter.knee.value = 8;
+  agcLimiter.ratio.value = p.agcRatio;
+  agcLimiter.attack.value = 0.004;
+  agcLimiter.release.value = 0.3;
+
+  //  Tambahan limiter lembut sebelum output
+  softLimiter = audioCtx.createDynamicsCompressor();
+softLimiter.threshold.value = -6;
+softLimiter.knee.value = 6;
+softLimiter.ratio.value = 4.5;
+softLimiter.attack.value = 0.008;
+softLimiter.release.value = 0.22;
+
+  peakLimiter = audioCtx.createDynamicsCompressor();
+  peakLimiter.threshold.value = -2;
+  peakLimiter.knee.value = 0;
+  peakLimiter.ratio.value = 20;
+  peakLimiter.attack.value = 0.002;
+  peakLimiter.release.value = 0.1;
+
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 2048;
+
+  gainNode = audioCtx.createGain();
+gainNode.gain.value = 0.78;
+
+  stereoPanner = audioCtx.createStereoPanner();
+  stereoPanner.pan.value = 0;
+
+  // Source
+  try {
+    if (sourceNode) sourceNode.disconnect();
+    sourceNode = audioCtx.createMediaElementSource(player);
+  } catch (e) {
+    console.warn(" Source Error:", e.message);
+    return;
+  }
+
+  // Main Chain
+  const mainChain = [
+    ...eqFilters,
+    subwoofer,
+    loudnessLow,
+    toneBias,
+    enhancer,
+    loudnessHigh,
+      deEsser,  
+    ambient
+  ];
+
+  let main = sourceNode;
+  mainChain.forEach(node => {
+    main.connect(node);
+    main = node;
+  });
+
+  // Clarity Paralel
+  sourceNode.connect(clarity);
+  clarity.connect(clarityGain);
+  clarityGain.connect(main);
+
+  // Final Dynamics
+  main.connect(compressor);
+  compressor.connect(agcLimiter);
+  agcLimiter.connect(softLimiter);
+  softLimiter.connect(peakLimiter);
+  peakLimiter.connect(analyser);
+  analyser.connect(gainNode);
+
+  lastAudioNode = gainNode;
+
+  if (stereoToggleState && stereoPanner) {
+    gainNode.connect(stereoPanner);
+    stereoPanner.connect(audioCtx.destination);
+    startAutoPan?.();
+  } else {
+    gainNode.connect(audioCtx.destination);
+  }
+
+  requestAnimationFrame(() => drawWaveform(analyser));
+}
+
+applyPreset("Flat");
+
+function drawWaveform(analyser) {
+  const canvas = document.getElementById("waveformCanvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = canvas.offsetWidth;
+  canvas.height = 100;
+
+  const data = new Uint8Array(analyser.fftSize);
+  let hue = 0;
+
+  function render() {
+    requestAnimationFrame(render);
+    analyser.getByteTimeDomainData(data);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const mid = canvas.height / 2;
+    const slice = canvas.width / data.length;
+    let x = 0;
+
+    //  Gradient Rainbow Glow
+    const grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
+    for (let i = 0; i <= 1; i += 0.2) {
+      grad.addColorStop(i, `hsl(${(hue + i * 360) % 360}, 100%, 60%)`);
+    }
+    hue = (hue + 1.5) % 360;
+
+    ctx.beginPath();
+    for (let i = 0; i < data.length; i++) {
+      let v = (data[i] - 128) / 128;
+      if (Math.abs(v) < 0.015) v = 0; // limiter visual
+      const boost = Math.sign(v) * Math.pow(Math.abs(v), 2.2); // kurva
+      const y = mid + boost * canvas.height * 0.65;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      x += slice;
+    }
+
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = grad;
+    ctx.shadowBlur = 60;
+    ctx.stroke();
+  }
+
+  render();
+}
+
+function formatTime(time) {
+  if (isNaN(time)) return "0:00";
+  const m = Math.floor(time / 60);
+  const s = Math.floor(time % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function updateNowPlaying() {
+  const nowPlaying = document.getElementById("trackName");
+  const currentTime = document.getElementById("currentTime");
+  const durationTime = document.getElementById("durationTime");
+  setInterval(() => {
+    if (player && !player.paused && player.readyState >= 2) {
+      nowPlaying.textContent = currentFilename;
+      currentTime.textContent = formatTime(player.currentTime);
+      durationTime.textContent = formatTime(player.duration);
+    }
+  }, 500);
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  const player = document.getElementById("audioPlayer");
+  const folderPicker = document.getElementById("folderPicker");
+
+//  Preset dropdown (Basic + Advance)
+["presetBasicSelect", "presetAdvanceSelect"].forEach(id => {
+  const select = document.getElementById(id);
+  if (select) {
+    select.addEventListener("change", e => {
+      const selected = e.target.value;
+      const source = (id === "presetBasicSelect") ? "basic" : "advance";
+      onManualPresetChange(selected, source); //  PAS banget ini
+    });
+  }
+});
+
+
+if (folderPicker) {
+  folderPicker.addEventListener("change", async e => {
+    const files = e.target.files;
+    if (files.length > 0) {
+      const audioFile = URL.createObjectURL(files[0]);
+      player.src = audioFile;
+      currentFilename = files[0].name;
+      player.load();
+      await audioCtx?.resume();
+      player.play().catch(err => console.warn(" Play failed:", err.message));
+
+      //  Apply correct manual preset
+     const basicVal = document.getElementById("presetBasicSelect")?.value;
+     const advanceVal = document.getElementById("presetAdvanceSelect")?.value;
+
+     if (basicVal && basicVal !== "Flat") {
+     onManualPresetChange(basicVal, "basic");
+     } else if (advanceVal && advanceVal !== "Flat") {
+     onManualPresetChange(advanceVal, "advance");
+     } else {
+    applyPreset("Flat");
+     }
+    }
+  }); //  Penutup event listener
+}
+
+
+//  Manual EQ Sliders Binding
+frequencies.forEach((freq, i) => {
+  const slider = document.getElementById(`eqSlider${i}`);
+  if (slider) {
+    slider.addEventListener("input", () => {
+      const gain = parseFloat(slider.value);
+      if (eqFilters[i]) {
+        eqFilters[i].gain.setTargetAtTime(gain, audioCtx.currentTime, 0.02);
+      }
+
+      // ✅ Update lastEQ supaya booster tahu kondisi real
+      if (lastEQ && lastEQ.length === 12) {
+        lastEQ[i] = gain;
+      }
+    });
+  }
+});
+
+player.addEventListener("play", async () => {
+  if (!audioCtx || audioCtx.state === "closed") {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  await audioCtx.resume();
+  if (!audioGraphInitialized) {
+    setupAudioGraph(player);
+    audioGraphInitialized = true;
+    applyPreset("Flat"); //  preset aman dipanggil setelah graph siap
+  }
+});
+
+  updateNowPlaying();
+  updateClock();
+});
+
+function updateClock() {
+  const clock = document.getElementById("digitalClock");
+  if (!clock) return;
+
+  const now = new Date();
+  const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  const day = days[now.getDay()];
+  const date = now.getDate();
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  const hours = now.getHours().toString().padStart(2, "0");
+  const minutes = now.getMinutes().toString().padStart(2, "0");
+  const ampm = now.getHours() >= 12 ? "PM" : "AM";
+
+  clock.textContent = `${day} ${date} ${month} ${year} ${hours}:${minutes} ${ampm}`;
+}
+
+setInterval(updateClock, 1000);
+
+document.addEventListener("DOMContentLoaded", () => {  
+  const btn = document.getElementById("testEngineBtn");  
+  
+const volumeSlider = document.getElementById("volumeRange");  
+if (volumeSlider) {  
+  volumeSlider.addEventListener("input", () => {  
+    const value = parseFloat(volumeSlider.value);  
+    if (gainNode) {  
+      gainNode.gain.setTargetAtTime(value, audioCtx.currentTime, 0.02);  
+    }  
+  
+    const info = document.getElementById("gain-info");  
+    if (info) {  
+      info.textContent = ` ${value.toFixed(2)}x`;  
+    }  
+  });  
+}  
+  
+window.addEventListener("DOMContentLoaded", () => {
+  const presetBasicSelect = document.getElementById("presetBasicSelect");
+  const presetAdvanceSelect = document.getElementById("presetAdvanceSelect");
+  const presetA = document.getElementById("presetA");
+  const presetB = document.getElementById("presetB");
+  const blendRatio = document.getElementById("blendRatio");
+  const blendValue = document.getElementById("blendValue");
+  const blendStatus = document.getElementById("blendStatus");
+  const blendToggleBtn = document.getElementById("blendToggleBtn");
+
+  function applyPreset(name) {
+    const preset = allPresets[name];
+    if (!preset || !eqFilters) return;
+    preset.eq.forEach((gain, i) => {
+      eqFilters[i].gain.value = gain;
+      const slider = document.querySelectorAll('.eq-slider')[i];
+      if (slider) slider.value = gain;
+    });
+  }
+
+  function blendPresets(p1, p2, ratio) {
+    const a = allPresets[p1];
+    const b = allPresets[p2];
+    if (!a || !b || !eqFilters.length) return;
+
+    a.eq.forEach((gainA, i) => {
+      const gainB = b.eq[i];
+      const blendedGain = gainA * (1 - ratio) + gainB * ratio;
+      eqFilters[i].gain.value = blendedGain;
+
+      const slider = document.querySelectorAll('.eq-slider')[i];
+      if (slider) slider.value = blendedGain;
+    });
+  }
+
+  function onManualPresetChange(name) {
+    if (blendActive) toggleBlend(false);
+    lastManualPreset = name;
+    applyPreset(name);
+  }
+
+  function toggleBlend(isOn) {
+    blendActive = isOn;
+    if (!blendStatus) return;
+    blendStatus.textContent = isOn ? "ON" : "OFF";
+    blendStatus.classList.toggle("on", isOn);
+    blendStatus.classList.toggle("off", !isOn);
+
+    if (isOn) {
+      const a = presetA.value;
+      const b = presetB.value;
+      const ratio = parseFloat(blendRatio.value);
+      blendPresets(a, b, ratio);
+    } else {
+      applyPreset(lastManualPreset);
+    }
+  }
+
+  function onBlendSelectionChanged() {
+    if (blendActive) toggleBlend(false);
+  }
+
+  if (blendRatio) {
+    blendRatio.addEventListener("input", () => {
+      const val = parseFloat(blendRatio.value);
+      if (blendValue) blendValue.textContent = `${val.toFixed(2)}x`;
+      if (blendActive) {
+        blendPresets(presetA.value, presetB.value, val);
+      }
+    });
+  }
+
+  if (presetBasicSelect) {
+    presetBasicSelect.addEventListener("change", e => onManualPresetChange(e.target.value));
+  }
+
+  if (presetAdvanceSelect) {
+    presetAdvanceSelect.addEventListener("change", e => onManualPresetChange(e.target.value));
+  }
+
+  if (presetA) {
+    presetA.addEventListener("change", onBlendSelectionChanged);
+  }
+
+  if (presetB) {
+    presetB.addEventListener("change", onBlendSelectionChanged);
+  }
+
+  if (blendToggleBtn) {
+    blendToggleBtn.addEventListener("click", () => {
+      toggleBlend(!blendActive);
+    });
+  }
+});
+
+
+  //  Stereo Toggle
+let stereoToggleState = false;
+let stereoPanner = audioCtx.createStereoPanner(); //  Global scope
+
+const stereoBtn = document.getElementById("StereoToggleBtn");
+const stereoStatus = document.getElementById("StereoStatus");
+
+if (stereoBtn && stereoStatus) {
+  stereoBtn.addEventListener("click", () => {
+    stereoToggleState = !stereoToggleState;
+    stereoStatus.textContent = stereoToggleState ? "ON" : "OFF";
+    stereoStatus.classList.toggle("on", stereoToggleState);
+    stereoStatus.classList.toggle("off", !stereoToggleState);
+
+    try {
+      // Putuskan sambungan lama
+      if (lastAudioNode) lastAudioNode.disconnect();
+      if (stereoPanner) stereoPanner.disconnect();
+
+      if (stereoToggleState) {
+        // Aktifkan stereo dynamic
+        lastAudioNode.connect(stereoPanner);
+        stereoPanner.connect(audioCtx.destination);
+
+        // Atur pan default 0 (center), bisa diatur dinamis nanti
+        stereoPanner.pan.setValueAtTime(0, audioCtx.currentTime);
+
+        //  Optional: Aktifkan auto-pan (swing kiri-kanan)
+        autoPan = true;
+        animateStereoPan();
+      } else {
+        // Kembali ke output normal
+        if (lastAudioNode) lastAudioNode.connect(audioCtx.destination);
+
+        autoPan = false; // stop animasi pan
+      }
+
+    } catch (err) {
+      console.warn(" Stereo toggle error:", err.message);
+    }
+  });
+}
+
+let autoPan = false;
+function animateStereoPan() {
+  if (!stereoPanner) return;
+
+  let pan = 0;
+  let dir = 1;
+
+  const panSpeed = 0.02;
+  const interval = 30;
+
+  function swing() {
+    if (!autoPan) return;
+    pan += dir * panSpeed;
+    if (pan > 1 || pan < -1) dir *= -1;
+    stereoPanner.pan.setValueAtTime(pan, audioCtx.currentTime);
+    setTimeout(swing, interval);
+  }
+  swing();
+}
+
+// ✅ Booster Logic Terpadu
+document.addEventListener("DOMContentLoaded", () => {
+
+  // ✅ Semua kode booster dimasukkan ke sini
+
+  // 🎚️ GLOBAL BOOSTER STATE
+  let boosterBand = null;
+  let boosterAmount = 2;
+
+  let lastEQ = [];
+  let lastEnhancer = 0;
+  let lastCompressor = -24;
+
+  const presetSelect = document.getElementById("presetSelect");
+  const boosterBtns = {
+    LOW: document.getElementById("boostLow"),
+    MID: document.getElementById("boostMid"),
+    HIGH: document.getElementById("boostHigh")
+  };
+
+  if (presetSelect) {
+    presetSelect.addEventListener("change", e => {
+      const mode = e.target.value;
+      switch (mode) {
+        case "Soft": boosterAmount = 1; break;
+        case "Normal": boosterAmount = 2; break;
+        case "Hard": boosterAmount = 3; break;
+        case "Extreme": boosterAmount = 5; break;
+        default: boosterAmount = 2;
+      }
+      renderEQ();
+    });
+  }
+
+  Object.entries(boosterBtns).forEach(([band, btn]) => {
+    if (btn) {
+      btn.addEventListener("click", () => {
+        boosterBand = (boosterBand === band) ? null : band;
+        highlightBoosterBand(boosterBand);
+        renderEQ();
+      });
+    }
+  });
+
+  function applyPreset(name) {
+    const preset = allPresets[name];
+    if (!preset) return;
+
+    lastEQ = [...preset.eq];
+    lastEnhancer = preset.enhancer;
+    lastCompressor = preset.compressor;
+    renderEQ();
+  }
+
+  function blendPresets(p1, p2, ratio) {
+    const a = allPresets[p1];
+    const b = allPresets[p2];
+    if (!a || !b) return;
+
+    lastEQ = a.eq.map((gA, i) => gA * (1 - ratio) + b.eq[i] * ratio);
+    lastEnhancer = (a.enhancer + b.enhancer) / 2;
+    lastCompressor = (a.compressor + b.compressor) / 2;
+    renderEQ();
+  }
+
+  function applyBoosterToBand(index, baseGain) {
+    if (!boosterBand) return baseGain;
+
+    const bands = {
+      LOW: [0,1,2,3],
+      MID: [4,5,6,7],
+      HIGH: [8,9,10,11]
+    };
+
+    return bands[boosterBand].includes(index)
+      ? baseGain + boosterAmount
+      : baseGain;
+  }
+
+  function renderEQ() {
+    if (!eqFilters || eqFilters.length === 0 || lastEQ.length !== eqFilters.length) return;
+
+    lastEQ.forEach((gain, i) => {
+      const boosted = applyBoosterToBand(i, gain);
+      eqFilters[i].gain.setTargetAtTime(boosted, audioCtx.currentTime, 0.02);
+
+      const slider = document.querySelectorAll(".eq-slider")[i];
+      if (slider) slider.value = boosted;
+    });
+
+    if (enhancer) enhancer.gain.setTargetAtTime(lastEnhancer, audioCtx.currentTime, 0.02);
+    if (compressor) {
+      compressor.threshold.setTargetAtTime(lastCompressor, audioCtx.currentTime, 0.02);
+      compressor.ratio.setTargetAtTime(6, audioCtx.currentTime, 0.02);
+    }
+  }
+
+  function highlightBoosterBand(active) {
+    Object.entries(boosterBtns).forEach(([band, btn]) => {
+      if (btn) btn.classList.toggle("active", band === active);
+    });
+  }
+
+  function onManualPresetChange(name, source) {
+    if (blendActive) toggleBlend(false);
+
+    if (source === "basic") {
+      if (advancePresets[lastManualPreset]) {
+        applyPreset("Flat");
+      }
+    } else if (source === "advance") {
+      if (basicPresets[lastManualPreset]) {
+        applyPreset("Flat");
+      }
+    }
+
+    lastManualPreset = name;
+    applyPreset(name);
+    highlightBoosterBand(boosterBand);
+  }
+
+});
+
+
+  //  Test Engine Button
+  btn?.addEventListener("click", () => {
+    const testLog = [];
+
+    //  Validasi engine
+    if (!eqFilters.length || !clarity || !enhancer || !compressor) {
+      testLog.push(" Audio engine belum aktif! Mainkan audio dulu.");
+    } else {
+      testLog.push(` EQ Filters (${eqFilters.length} bands)`);
+      eqFilters.forEach((f, i) => {
+        testLog.push(`  Band ${i + 1} [${f.frequency.value} Hz]  Gain: ${f.gain.value} dB`);
+      });
+
+      testLog.push(` Clarity  ${clarity?.type} @ ${clarity?.frequency?.value}Hz | Gain: ${clarity?.gain?.value} dB`);
+      testLog.push(` Enhancer  ${enhancer?.type} @ ${enhancer?.frequency?.value}Hz | Gain: ${enhancer?.gain?.value} dB`);
+      testLog.push(` Subwoofer  ${subwoofer?.type} @ ${subwoofer?.frequency?.value}Hz | Gain: ${subwoofer?.gain?.value} dB`);
+      testLog.push(` Loudness Low  ${loudnessLow?.type} @ ${loudnessLow?.frequency?.value}Hz | Gain: ${loudnessLow?.gain?.value} dB`);
+      testLog.push(` Loudness High  ${loudnessHigh?.type} @ ${loudnessHigh?.frequency?.value}Hz | Gain: ${loudnessHigh?.gain?.value} dB`);
+      testLog.push(` Ambient  ${ambient?.type} @ ${ambient?.frequency?.value}Hz | Q: ${ambient?.Q?.value}`);
+      testLog.push(` AGC Limiter  Threshold: ${agcLimiter?.threshold?.value} | Ratio: ${agcLimiter?.ratio?.value}`);
+      testLog.push(` Compressor  Threshold: ${compressor?.threshold?.value} dB | Ratio: ${compressor?.ratio?.value}`);
+    }
+
+    // Tampilkan ke UI dan console
+    const output = document.getElementById("testLog");
+    if (output) output.textContent = testLog.join("\n");
+    console.log(" Mesin Audio Info:\n" + testLog.join("\n"));
+  });
+});
+
+console.log(" Script Loaded");
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
